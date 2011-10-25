@@ -85,7 +85,7 @@ namespace :cassandra do
 
     env = setup_environment
 
-    Dir.chdir(File.join(CASSANDRA_HOME, "cassandra-#{CASSANDRA_VERSION}")) do
+    Dir.chdir(CASSANDRA_HOME) do
       sh("env #{env} bin/cassandra #{'-f' unless args.daemonize} -p #{CASSANDRA_PIDFILE}")
     end
   end
@@ -109,7 +109,7 @@ end
 
 desc "Run the Cassandra CLI"
 task :cli do
-  Dir.chdir(File.join(CASSANDRA_HOME, "cassandra-#{CASSANDRA_VERSION}")) do
+  Dir.chdir(CASSANDRA_HOME) do
     sh("bin/cassandra-cli -host localhost -port 9160")
   end
 end
@@ -138,7 +138,7 @@ namespace :data do
 
       schema_path = "#{File.expand_path(Dir.pwd)}/conf/#{CASSANDRA_VERSION}/schema.txt"
       puts "Loading test data structures."
-      Dir.chdir(File.join(CASSANDRA_HOME, "cassandra-#{CASSANDRA_VERSION}")) do
+      Dir.chdir(CASSANDRA_HOME) do
         begin
           sh("bin/cassandra-cli --host localhost --batch < #{schema_path}")
         rescue
