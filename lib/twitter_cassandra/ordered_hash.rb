@@ -91,10 +91,20 @@ class TwitterCassandra
         self
       end
 
-      def each
-        @keys.each {|key| yield [key, self[key]]}
+      # TDG5 12/30/2014:
+      # There's a bug either in this gem or in Ruby 2.2.0 that causes yielding
+      # in the method below to cause the process to crash with an error along
+      # the lines of:
+      #   lib/cassandra/ordered_hash.rb: [BUG] Stack consistency # error
+      #
+      # However, this bug doesn't occur if we use block.call instead of yield.
+      # Go figure. Tried to trace the error back further, but this is as far as
+      # I made it.
+      def each(&block)
+        @keys.each {|key| block.call([key, self[key]])}
         self
       end
+
 
       alias_method :each_pair, :each
 
