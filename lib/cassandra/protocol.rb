@@ -1,4 +1,4 @@
-class Cassandra
+class TwitterCassandra
   # Inner methods for actually doing the Thrift calls
   module Protocol #:nodoc:
     private
@@ -90,9 +90,9 @@ class Cassandra
       predicate = if columns
                     CassandraThrift::SlicePredicate.new(:column_names => columns)
                   else
-                    CassandraThrift::SlicePredicate.new(:slice_range => 
+                    CassandraThrift::SlicePredicate.new(:slice_range =>
                       CassandraThrift::SliceRange.new(
-                        :start  => start, 
+                        :start  => start,
                         :finish => finish,
                         :count  => count,
                         :reversed => reversed))

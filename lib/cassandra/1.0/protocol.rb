@@ -1,6 +1,6 @@
 require "#{File.expand_path(File.dirname(__FILE__))}/../0.7/protocol"
 
-class Cassandra
+class TwitterCassandra
   # Inner methods for actually doing the Thrift calls
   module Protocol #:nodoc:
     private
