@@ -2,7 +2,7 @@
 
 require 'rubygems'
 require 'rake'
-require 'cassandra'
+require 'twitter_cassandra'
 
 gem_path = $LOAD_PATH.last.sub(/lib$/, "")
 
