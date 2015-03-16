@@ -12,13 +12,15 @@ CassandraBinaries = {
 }
 
 CASSANDRA_HOME = ENV['CASSANDRA_HOME'] || "#{ENV['HOME']}/cassandra"
+CASSANDRA_DIR_PREFIX = ENV['CASSANDRA_DIR_PREFIX'] || 'cassandra-'
 CASSANDRA_VERSION = ENV['CASSANDRA_VERSION'] || '0.8'
+CASSANDRA_VERSION_MAJOR_MINOR_ONLY = CASSANDRA_VERSION[0..2]
 CASSANDRA_PIDFILE = ENV['CASSANDRA_PIDFILE'] || "#{CASSANDRA_HOME}/cassandra.pid"
 
 def setup_cassandra_version(version = CASSANDRA_VERSION)
   FileUtils.mkdir_p CASSANDRA_HOME
 
-  destination_directory = File.join(CASSANDRA_HOME, 'cassandra-' + CASSANDRA_VERSION)
+  destination_directory = File.join(CASSANDRA_HOME, CASSANDRA_DIR_PREFIX + CASSANDRA_VERSION)
 
   unless File.exists?(File.join(destination_directory, 'bin','cassandra'))
     download_source       = CassandraBinaries[CASSANDRA_VERSION]
@@ -36,9 +38,9 @@ end
 def setup_environment
   env = ""
   if !ENV["CASSANDRA_INCLUDE"]
-    env << "CASSANDRA_INCLUDE=#{File.expand_path(Dir.pwd)}/conf/#{CASSANDRA_VERSION}/cassandra.in.sh "
-    env << "CASSANDRA_HOME=#{CASSANDRA_HOME}/cassandra-#{CASSANDRA_VERSION} "
-    env << "CASSANDRA_CONF=#{File.expand_path(Dir.pwd)}/conf/#{CASSANDRA_VERSION}"
+    env << "CASSANDRA_INCLUDE=#{File.expand_path(Dir.pwd)}/conf/#{CASSANDRA_VERSION_MAJOR_MINOR_ONLY}/cassandra.in.sh "
+    env << "CASSANDRA_HOME=#{CASSANDRA_HOME}/#{CASSANDRA_DIR_PREFIX}#{CASSANDRA_VERSION} "
+    env << "CASSANDRA_CONF=#{File.expand_path(Dir.pwd)}/conf/#{CASSANDRA_VERSION_MAJOR_MINOR_ONLY}"
   else
     env << "CASSANDRA_INCLUDE=#{ENV['CASSANDRA_INCLUDE']} "
     env << "CASSANDRA_HOME=#{ENV['CASSANDRA_HOME']} "
@@ -79,7 +81,7 @@ namespace :cassandra do
     setup_cassandra_version
     env = setup_environment
 
-    Dir.chdir(File.join(CASSANDRA_HOME, "cassandra-#{CASSANDRA_VERSION}")) do
+    Dir.chdir(File.join(CASSANDRA_HOME, "#{CASSANDRA_DIR_PREFIX}#{CASSANDRA_VERSION}")) do
       sh("env #{env} bin/cassandra #{'-f' unless args.daemonize} -p #{CASSANDRA_PIDFILE}")
     end
 
@@ -118,7 +120,7 @@ end
 
 desc "Run the Cassandra CLI"
 task :cli do
-  Dir.chdir(File.join(CASSANDRA_HOME, "cassandra-#{CASSANDRA_VERSION}")) do
+  Dir.chdir(File.join(CASSANDRA_HOME, "#{CASSANDRA_DIR_PREFIX}#{CASSANDRA_VERSION}")) do
     sh("bin/cassandra-cli -host localhost -port 9160")
   end
 end
@@ -127,7 +129,7 @@ desc "Check Java version"
 task :java do
   is_java16 = `java -version 2>&1`.split("\n").first =~ /java version "1.6/
 
-  if ['0.6', '0.7'].include?(CASSANDRA_VERSION) && !java16
+  if ['0.6', '0.7'].include?(CASSANDRA_VERSION_MAJOR_MINOR_ONLY) && !java16
     puts "You need to configure your environment for Java 1.6."
     puts "If you're on OS X, just export the following environment variables:"
     puts '  JAVA_HOME="/System/Library/Frameworks/JavaVM.framework/Versions/1.6/Home"'
@@ -140,16 +142,16 @@ namespace :data do
   desc "Reset test data"
   task :reset do
     puts "Resetting test data"
-    sh("rm -rf #{File.join(CASSANDRA_HOME, "cassandra-#{CASSANDRA_VERSION}", 'data')}")
+    sh("rm -rf #{File.join(CASSANDRA_HOME, "#{CASSANDRA_DIR_PREFIX}#{CASSANDRA_VERSION}", 'data')}")
   end
 
   desc "Load test data structures."
   task :load do
     unless CASSANDRA_VERSION == '0.6'
 
-      schema_path = "#{File.expand_path(Dir.pwd)}/conf/#{CASSANDRA_VERSION}/schema.txt"
+      schema_path = "#{File.expand_path(Dir.pwd)}/conf/#{CASSANDRA_VERSION_MAJOR_MINOR_ONLY}/schema.txt"
       puts "Loading test data structures."
-      Dir.chdir(File.join(CASSANDRA_HOME, "cassandra-#{CASSANDRA_VERSION}")) do
+      Dir.chdir(File.join(CASSANDRA_HOME, "#{CASSANDRA_DIR_PREFIX}#{CASSANDRA_VERSION}")) do
         begin
           sh("bin/cassandra-cli --host localhost --batch < #{schema_path}")
         rescue
@@ -165,12 +167,12 @@ task :test => 'data:load'
 # desc "Regenerate thrift bindings for Cassandra" # Dev only
 task :thrift do
   puts "Generating Thrift bindings"
-  FileUtils.mkdir_p "vendor/#{CASSANDRA_VERSION}"
+  FileUtils.mkdir_p "vendor/#{CASSANDRA_VERSION_MAJOR_MINOR_ONLY}"
 
   system(
-    "cd vendor/#{CASSANDRA_VERSION} &&
+    "cd vendor/#{CASSANDRA_VERSION_MAJOR_MINOR_ONLY} &&
     rm -rf gen-rb &&
-    thrift -gen rb #{File.join(CASSANDRA_HOME, "cassandra-#{CASSANDRA_VERSION}")}/interface/cassandra.thrift")
+    thrift -gen rb #{File.join(CASSANDRA_HOME, "#{CASSANDRA_DIR_PREFIX}#{CASSANDRA_VERSION}")}/interface/cassandra.thrift")
 end
 
 task :fix_perms do

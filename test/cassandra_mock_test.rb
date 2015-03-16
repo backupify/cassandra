@@ -7,7 +7,7 @@ class CassandraMockTest < CassandraTest
   include TwitterCassandra::Constants
 
   def setup
-    @test_schema = JSON.parse(File.read(File.join(File.expand_path(File.dirname(__FILE__)), '..','conf', CASSANDRA_VERSION, 'schema.json')))
+    @test_schema = JSON.parse(File.read(File.join(File.expand_path(File.dirname(__FILE__)), '..','conf', CASSANDRA_VERSION_MAJOR_MINOR_ONLY, 'schema.json')))
     @twitter = TwitterCassandra::Mock.new('Twitter', @test_schema)
     @twitter.clear_keyspace!
 

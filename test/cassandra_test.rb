@@ -534,8 +534,8 @@ class CassandraTest < Test::Unit::TestCase
 
     @twitter.insert(:Statuses, key, columns)
     assert_equal 200, @twitter.count_columns(:Statuses, key, :count => 200)
-    assert_equal 100, @twitter.count_columns(:Statuses, key) if CASSANDRA_VERSION.to_f >= 0.8
-    assert_equal 55, @twitter.count_columns(:Statuses, key, :count => 55) if CASSANDRA_VERSION.to_f >= 0.8
+    assert_equal 100, @twitter.count_columns(:Statuses, key) if CASSANDRA_VERSION_MAJOR_MINOR_ONLY.to_f >= 0.8
+    assert_equal 55, @twitter.count_columns(:Statuses, key, :count => 55) if CASSANDRA_VERSION_MAJOR_MINOR_ONLY.to_f >= 0.8
   end
 
   def test_count_super_columns
@@ -579,13 +579,13 @@ class CassandraTest < Test::Unit::TestCase
       @twitter.insert(:Users, k + '3', {'body' => 'bogus', 'user' => 'v3'})
       @twitter.insert(:Users, k + '3', {'body' => 'v3', 'location' => 'v3'})
       @twitter.insert(:Statuses, k + '3', {'body' => 'v'})
-      @twitter.add(:UserCounters, 'bob', 5, 'tweet_count') if CASSANDRA_VERSION.to_f >= 0.8
+      @twitter.add(:UserCounters, 'bob', 5, 'tweet_count') if CASSANDRA_VERSION_MAJOR_MINOR_ONLY.to_f >= 0.8
 
       assert_equal({'delete_me' => 'v0', 'keep_me' => 'v0'}, @twitter.get(:Users, k + '0')) # Written
       assert_equal({'body' => 'v1', 'user' => 'v1'}, @twitter.get(:Users, k + '1')) # Written
       assert_equal({}, @twitter.get(:Users, k + '2')) # Not yet written
       assert_equal({}, @twitter.get(:Statuses, k + '3')) # Not yet written
-      assert_equal({}, @twitter.get(:UserCounters, 'bob')) if CASSANDRA_VERSION.to_f >= 0.8 # Written
+      assert_equal({}, @twitter.get(:UserCounters, 'bob')) if CASSANDRA_VERSION_MAJOR_MINOR_ONLY.to_f >= 0.8 # Written
 
       @twitter.remove(:Users, k + '1') # Full row
       assert_equal({'body' => 'v1', 'user' => 'v1'}, @twitter.get(:Users, k + '1')) # Not yet removed
@@ -611,7 +611,7 @@ class CassandraTest < Test::Unit::TestCase
     assert_equal({'body' => 'v3', 'user' => 'v3', 'location' => 'v3'}, @twitter.get(:Users, k + '3')) # Written and compacted
     assert_equal({'body' => 'v4', 'user' => 'v4'}, @twitter.get(:Users, k + '4')) # Written
     assert_equal({'body' => 'v'}, @twitter.get(:Statuses, k + '3')) # Written
-    assert_equal({'tweet_count' => 5}, @twitter.get(:UserCounters, 'bob')) if CASSANDRA_VERSION.to_f >= 0.8 # Written
+    assert_equal({'tweet_count' => 5}, @twitter.get(:UserCounters, 'bob')) if CASSANDRA_VERSION_MAJOR_MINOR_ONLY.to_f >= 0.8 # Written
     assert_equal({}, @twitter.get(:Users, k + '1')) # Removed
 
     assert_equal({ 'keep_me' => 'v0'}, @twitter.get(:Users, k + '0')) # 'delete_me' column removed
@@ -652,9 +652,9 @@ class CassandraTest < Test::Unit::TestCase
       assert_equal({'body' => 'v1', 'user' => 'v1'}, @twitter.get(:Users, k + '1')) # Written
       assert_equal({}, @twitter.get(:Users, k + '2')) # Not yet written
       assert_equal({}, @twitter.get(:Statuses, k + '3')) # Not yet written
-      assert_equal({}, @twitter.get(:UserCounters, 'bob')) if CASSANDRA_VERSION.to_f >= 0.8 # Written
+      assert_equal({}, @twitter.get(:UserCounters, 'bob')) if CASSANDRA_VERSION_MAJOR_MINOR_ONLY.to_f >= 0.8 # Written
 
-      if CASSANDRA_VERSION.to_f >= 0.8
+      if CASSANDRA_VERSION_MAJOR_MINOR_ONLY.to_f >= 0.8
         @twitter.add(:UserCounters, 'bob', 5, 'tweet_count')
       else
         @twitter.insert(:Users, k + '2', {'body' => 'v2', 'user' => 'v2'})
@@ -664,7 +664,7 @@ class CassandraTest < Test::Unit::TestCase
       assert_equal({'body' => 'v2', 'user' => 'v2'}, @twitter.get(:Users, k + '2')) # Written
       assert_equal({'body' => 'v3', 'user' => 'v3', 'location' => 'v3'}, @twitter.get(:Users, k + '3')) # Written and compacted
       assert_equal({'body' => 'v'}, @twitter.get(:Statuses, k + '3')) # Written
-      assert_equal({'tweet_count' => 5}, @twitter.get(:UserCounters, 'bob')) if CASSANDRA_VERSION.to_f >= 0.8 # Written
+      assert_equal({'tweet_count' => 5}, @twitter.get(:UserCounters, 'bob')) if CASSANDRA_VERSION_MAJOR_MINOR_ONLY.to_f >= 0.8 # Written
 
       @twitter.remove(:Users, k + '1') # Full row
       @twitter.remove(:Users, k + '0', 'delete_me') # A single column of the row
@@ -808,7 +808,7 @@ class CassandraTest < Test::Unit::TestCase
   end
 
 
-  if CASSANDRA_VERSION.to_f >= 0.7
+  if CASSANDRA_VERSION_MAJOR_MINOR_ONLY.to_f >= 0.7
     def test_creating_and_dropping_new_index
       @twitter.create_index('Twitter', 'Statuses', 'column_name', 'BytesType')
       assert_nil @twitter.create_index('Twitter', 'Statuses', 'column_name', 'BytesType')
@@ -1183,7 +1183,7 @@ class CassandraTest < Test::Unit::TestCase
       )
       assert @twitter.column_families.include?(k)
 
-      if CASSANDRA_VERSION.to_f == 0.7
+      if CASSANDRA_VERSION_MAJOR_MINOR_ONLY.to_f == 0.7
         # Verify rename_column_family works properly
         @twitter.rename_column_family(k, k + '_renamed')
         assert @twitter.column_families.include?(k + '_renamed')
@@ -1203,7 +1203,7 @@ class CassandraTest < Test::Unit::TestCase
     end
   end
 
-  if CASSANDRA_VERSION.to_f >= 0.8
+  if CASSANDRA_VERSION_MAJOR_MINOR_ONLY.to_f >= 0.8
     def test_adding_getting_value_in_counter
       assert_nil @twitter.add(:UserCounters, 'bob', 5, 'tweet_count')
       assert_equal(5, @twitter.get(:UserCounters, 'bob', 'tweet_count'))

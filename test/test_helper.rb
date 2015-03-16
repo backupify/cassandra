@@ -1,7 +1,8 @@
 CASSANDRA_VERSION = ENV['CASSANDRA_VERSION'] || '0.8' unless defined?(CASSANDRA_VERSION)
+CASSANDRA_VERSION_MAJOR_MINOR_ONLY = CASSANDRA_VERSION[0..2] unless defined?(CASSANDRA_VERSION_MAJOR_MINOR_ONLY)
 
 require 'test/unit'
-require "#{File.expand_path(File.dirname(__FILE__))}/../lib/twitter_cassandra/#{CASSANDRA_VERSION}"
+require "#{File.expand_path(File.dirname(__FILE__))}/../lib/twitter_cassandra/#{CASSANDRA_VERSION_MAJOR_MINOR_ONLY}"
 begin; require 'ruby-debug'; rescue LoadError; end
 
 begin
