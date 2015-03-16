@@ -20,6 +20,24 @@ API below):
     client = Cassandra.new('Twitter', '127.0.0.1:9160')
     client.insert(:Users, "5", {'screen_name' => "buttonscat"})
 
+## How to run the tests
+
+The trick to running tests is getting your environment variables correct. By
+default, this gem assumes all Cassandra versions will be installed in
+"~/cassandra", in dirs with a prefix of "cassandra-" followed by the Cassandra
+version, which defaults to "0.8". If this matches your environment, great! Then
+you can run tests by running `rake test` or even `rake`.
+
+However, if the defaults don't match your environment, say for example Cassandra lives
+in "/usr/local", and the Cassandra versions live in dirs with a prefix of
+"apache-cassandra-" followed by the version, and you want to test version
+"1.2.15", then you could use the `CASSANDRA_HOME`, `CASSANDRA_DIR_PREFIX`, and
+`CASSANDRA_VERSION` environment variables to customize how the test suite tries
+to interact with your Cassandra instance. To run the test suite in the
+environment described, you would run:
+
+    CASSANDRA_HOME=/usr/local CASSANDRA_DIR_PREFIX=apache-cassandra- CASSANDRA_VERSION=1.2.15 rake
+
 ## License
 
 Copyright 2009-2011 Twitter, Inc. See included LICENSE file. Portions copyright 2004-2009 David Heinemeier Hansson, and used with permission.
