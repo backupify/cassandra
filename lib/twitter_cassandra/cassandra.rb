@@ -71,6 +71,14 @@ class TwitterCassandra
     Thrift::FramedTransport
   end
 
+  def self.read_defaults
+    const_get(:READ_DEFAULTS)
+  end
+
+  def self.write_defaults
+    const_get(:WRITE_DEFAULTS)
+  end
+
   # Create a new TwitterCassandra instance and open the connection.
   def initialize(keyspace, servers = "127.0.0.1:9160", thrift_client_options = {})
     @is_super = {}
@@ -84,6 +92,14 @@ class TwitterCassandra
     @thrift_client_class = @thrift_client_options[:thrift_client_class]
     @keyspace = keyspace
     @servers = Array(servers)
+  end
+
+  def read_defaults
+    @read_defaults ||= self.class.read_defaults.dup
+  end
+
+  def write_defaults
+    @write_defaults ||= self.class.write_defaults.dup
   end
 
   ##
@@ -365,7 +381,7 @@ class TwitterCassandra
   # do not want to specify a write consistency for each insert statement.
   #
   def default_write_consistency=(value)
-    WRITE_DEFAULTS[:consistency] = value
+    write_defaults[:consistency] = value
   end
 
   ##
@@ -374,7 +390,7 @@ class TwitterCassandra
   # do not want to specify a read consistency for each query.
   #
   def default_read_consistency=(value)
-    READ_DEFAULTS[:consistency] = value
+    read_defaults[:consistency] = value
   end
 
   ##
@@ -396,7 +412,7 @@ class TwitterCassandra
   #   * :ttl - If specified this is the number of seconds after the insert that this value will be available.
   #
   def insert(column_family, key, hash, options = {})
-    column_family, _, _, options = extract_and_validate_params(column_family, key, [options], WRITE_DEFAULTS)
+    column_family, _, _, options = extract_and_validate_params(column_family, key, [options], write_defaults)
 
     timestamp = options[:timestamp] || Time.stamp
     mutation_map = if is_super(column_family)
@@ -435,7 +451,7 @@ class TwitterCassandra
   #   * :consistency - Uses the default write consistency if none specified.
   #
   def remove(column_family, key, *columns_and_options)
-    column_family, columns, sub_column, options = extract_and_validate_params(column_family, key, columns_and_options, WRITE_DEFAULTS)
+    column_family, columns, sub_column, options = extract_and_validate_params(column_family, key, columns_and_options, write_defaults)
 
     if columns.is_a? Array
       if sub_column
@@ -476,7 +492,7 @@ class TwitterCassandra
   #
   def count_columns(column_family, key, *columns_and_options)
     column_family, super_column, _, options =
-      extract_and_validate_params(column_family, key, columns_and_options, READ_DEFAULTS)
+      extract_and_validate_params(column_family, key, columns_and_options, read_defaults)
     _count_columns(column_family, key, super_column, options[:start], options[:stop], options[:count], options[:consistency])
   end
 
@@ -510,7 +526,7 @@ class TwitterCassandra
   #
   def get_columns(column_family, key, *columns_and_options)
     column_family, columns, sub_columns, options =
-      extract_and_validate_params(column_family, key, columns_and_options, READ_DEFAULTS)
+      extract_and_validate_params(column_family, key, columns_and_options, read_defaults)
     _get_columns(column_family, key, columns, sub_columns, options[:consistency])
   end
 
@@ -529,7 +545,7 @@ class TwitterCassandra
   #
   def multi_get_columns(column_family, keys, *columns_and_options)
     column_family, columns, sub_columns, options =
-      extract_and_validate_params(column_family, keys, columns_and_options, READ_DEFAULTS)
+      extract_and_validate_params(column_family, keys, columns_and_options, read_defaults)
     _multi_get_columns(column_family, keys, columns, sub_columns, options[:consistency])
   end
 
@@ -576,7 +592,7 @@ class TwitterCassandra
   #
   def multi_get(column_family, keys, *columns_and_options)
     column_family, column, sub_column, options =
-      extract_and_validate_params(column_family, keys, columns_and_options, READ_DEFAULTS)
+      extract_and_validate_params(column_family, keys, columns_and_options, read_defaults)
 
     hash = _multiget(column_family, keys, column, sub_column, options[:count], options[:start], options[:finish], options[:reversed], options[:consistency])
 
@@ -605,7 +621,7 @@ class TwitterCassandra
   #
   def exists?(column_family, key, *columns_and_options)
     column_family, column, sub_column, options =
-      extract_and_validate_params(column_family, key, columns_and_options, READ_DEFAULTS)
+      extract_and_validate_params(column_family, key, columns_and_options, read_defaults)
     result = if column
                _multiget(column_family, [key], column, sub_column, 1, '', '', false, options[:consistency])[key]
              else
@@ -676,7 +692,7 @@ class TwitterCassandra
 
     column_family, _, _, options =
       extract_and_validate_params(column_family, "", [options],
-                                  READ_DEFAULTS.merge(:start_key  => '',
+                                  read_defaults.merge(:start_key  => '',
                                                       :finish_key => '',
                                                       :key_count  => 100,
                                                       :columns    => nil,
@@ -807,7 +823,7 @@ class TwitterCassandra
     @batch = TwitterCassandra::Batch.new(self, options)
 
     _, _, _, options =
-      extract_and_validate_params(schema.cf_defs.first.name, "", [options], WRITE_DEFAULTS)
+      extract_and_validate_params(schema.cf_defs.first.name, "", [options], write_defaults)
 
     yield(self)
     flush_batch(options)
@@ -944,7 +960,7 @@ class TwitterCassandra
 
     column_family, columns, _, options =
       extract_and_validate_params(column_family, [], columns_and_options,
-      READ_DEFAULTS.merge(:key_count => 100, :start_key => nil, :key_start => nil))
+      read_defaults.merge(:key_count => 100, :start_key => nil, :key_start => nil))
 
     start_key = options[:start_key] || options[:key_start] || ""
 

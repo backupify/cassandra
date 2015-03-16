@@ -15,6 +15,14 @@ class TwitterCassandra
 
     attr_reader :keyspace
 
+    def self.read_defaults
+      READ_DEFAULTS
+    end
+
+    def self.write_defaults
+      WRITE_DEFAULTS
+    end
+
     def initialize(keyspace, schema)
       @is_super = {}
       @keyspace = keyspace
@@ -25,6 +33,14 @@ class TwitterCassandra
       @indexes = {}
       @schema = schema[keyspace]
       clear_keyspace!
+    end
+
+    def read_defaults
+      @read_defaults ||= self.class.read_defaults.dup
+    end
+
+    def write_defaults
+      @write_defaults ||= self.class.write_defaults.dup
     end
 
     def disconnect!
@@ -39,11 +55,11 @@ class TwitterCassandra
     end
 
     def default_write_consistency=(value)
-      WRITE_DEFAULTS[:consistency] = value
+      write_defaults[:consistency] = value
     end
 
     def default_read_consistency=(value)
-      READ_DEFAULTS[:consistency] = value
+      read_defaults[:consistency] = value
     end
 
     def insert(column_family, key, hash_or_array, options = {})
@@ -93,7 +109,7 @@ class TwitterCassandra
 
     def get(column_family, key, *columns_and_options)
       column_family, column, sub_column, options =
-        extract_and_validate_params_for_real(column_family, [key], columns_and_options, READ_DEFAULTS)
+        extract_and_validate_params_for_real(column_family, [key], columns_and_options, read_defaults)
       if !is_super(column_family)
         get_standard(column_family, key, column, options)
       else
@@ -136,14 +152,14 @@ class TwitterCassandra
     end
 
     def exists?(column_family, key, *columns_and_options)
-      column_family, column, sub_column, options = extract_and_validate_params_for_real(column_family, [key], columns_and_options, READ_DEFAULTS)
+      column_family, column, sub_column, options = extract_and_validate_params_for_real(column_family, [key], columns_and_options, read_defaults)
       results = get(column_family, key, column, sub_column)
 
       ![{}, nil].include?(results)
     end
 
     def multi_get(column_family, keys, *columns_and_options)
-      column_family, column, sub_column, options = extract_and_validate_params_for_real(column_family, keys, columns_and_options, READ_DEFAULTS)
+      column_family, column, sub_column, options = extract_and_validate_params_for_real(column_family, keys, columns_and_options, read_defaults)
       keys.inject(OrderedHash.new) do |hash, key|
         hash[key] = get(column_family, key)
         hash
@@ -151,7 +167,7 @@ class TwitterCassandra
     end
 
     def remove(column_family, key, *columns_and_options)
-      column_family, columns, sub_column, options = extract_and_validate_params_for_real(column_family, key, columns_and_options, WRITE_DEFAULTS)
+      column_family, columns, sub_column, options = extract_and_validate_params_for_real(column_family, key, columns_and_options, write_defaults)
 
       if @batch
         @batch << [:remove, column_family, key, columns, sub_column]
@@ -179,7 +195,7 @@ class TwitterCassandra
     end
 
     def get_columns(column_family, key, *columns_and_options)
-      column_family, columns, sub_columns, options = extract_and_validate_params_for_real(column_family, key, columns_and_options, READ_DEFAULTS)
+      column_family, columns, sub_columns, options = extract_and_validate_params_for_real(column_family, key, columns_and_options, read_defaults)
       d = get(column_family, key)
 
       if sub_columns
@@ -194,7 +210,7 @@ class TwitterCassandra
     end
 
     def count_columns(column_family, key, *columns_and_options)
-      column_family, columns, sub_columns, options = extract_and_validate_params_for_real(column_family, key, columns_and_options, READ_DEFAULTS)
+      column_family, columns, sub_columns, options = extract_and_validate_params_for_real(column_family, key, columns_and_options, read_defaults)
 
       get(column_family, key, columns, options).keys.length
     end
@@ -215,7 +231,7 @@ class TwitterCassandra
 
     def get_range(column_family, options = {}, &blk)
       column_family, _, _, options = extract_and_validate_params_for_real(column_family, "", [options],
-                                                                          READ_DEFAULTS.merge(:start_key  => nil,
+                                                                          read_defaults.merge(:start_key  => nil,
                                                                                               :finish_key => nil,
                                                                                               :key_count  => 100,
                                                                                               :columns    => nil,
@@ -312,7 +328,7 @@ class TwitterCassandra
     def get_indexed_slices(column_family, idx_clause, *columns_and_options)
       column_family, columns, _, options =
         extract_and_validate_params_for_real(column_family, [], columns_and_options,
-        READ_DEFAULTS.merge(:key_count => 100, :start_key => nil, :key_start => nil))
+        read_defaults.merge(:key_count => 100, :start_key => nil, :key_start => nil))
 
       start_key = options[:start_key] || options[:key_start] || ""
 
@@ -343,7 +359,7 @@ class TwitterCassandra
       if @batch
         @batch << [:add, column_family, key, value, *columns_and_options]
       else
-        column_family, column, sub_column, options = extract_and_validate_params_for_real(column_family, key, columns_and_options, WRITE_DEFAULTS)
+        column_family, column, sub_column, options = extract_and_validate_params_for_real(column_family, key, columns_and_options, write_defaults)
 
         if is_super(column_family)
           cf(column_family)[key]                      ||= OrderedHash.new

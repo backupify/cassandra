@@ -50,12 +50,12 @@ class CassandraTest < Test::Unit::TestCase
     assert_nothing_raised do
       @twitter.default_read_consistency = TwitterCassandra::Consistency::ALL
     end
-    assert_equal(TwitterCassandra::READ_DEFAULTS[:consistency], TwitterCassandra::Consistency::ALL)
+    assert_equal(@twitter.read_defaults[:consistency], TwitterCassandra::Consistency::ALL)
 
     assert_nothing_raised do
       @twitter.default_write_consistency = TwitterCassandra::Consistency::ALL
     end
-    assert_equal(TwitterCassandra::WRITE_DEFAULTS[:consistency], TwitterCassandra::Consistency::ALL)
+    assert_equal(@twitter.write_defaults[:consistency], TwitterCassandra::Consistency::ALL)
   end
 
   def test_get_key
