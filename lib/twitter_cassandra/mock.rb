@@ -489,12 +489,14 @@ class TwitterCassandra
       output = OrderedHash.new
 
       columns.each do |column_name, value|
+        column_name = column_name.dup
         timestamp = columns.timestamps[column_name]
         column = column_class.new(column_name)
 
         if [Hash, OrderedHash].include?(value.class)
           output[column] ||= OrderedHash.new
           value.each do |sub_column, sub_column_value|
+            sub_column = sub_column.dup
             timestamp = value.timestamps[sub_column]
             output[column].[]=(sub_column_class.new(sub_column), sub_column_value, timestamp)
           end
