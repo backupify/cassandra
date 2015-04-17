@@ -567,7 +567,17 @@ class TwitterCassandra
   #   * :consistency - Uses the default read consistency if none specified.
   #
   def get(column_family, key, *columns_and_options)
-    multi_get(column_family, [key], *columns_and_options)[key]
+    results = multi_get(column_family, [key], *columns_and_options)[key]
+    if results.count > 1000
+      log_warning({
+        :context => {
+          :backtrace => caller[0..9].join("=>"),
+          :record_count => results.length,
+        },
+        :event_context => "large_cassandra_read",
+      })
+    end
+    results
   end
 
   ##
@@ -1057,5 +1067,14 @@ class TwitterCassandra
     else
       @servers
     end
+  end
+
+  def log_warning(options = {})
+    return false unless defined?(::TwitterCassandra::Logger)
+    ::TwitterCassandra::Logger.logger.
+      event_context(options[:event_context] || self.class.name).
+      context(options[:context] || {}).
+      warn(options[:message] || "")
+    true
   end
 end
