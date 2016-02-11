@@ -567,17 +567,7 @@ class TwitterCassandra
   #   * :consistency - Uses the default read consistency if none specified.
   #
   def get(column_family, key, *columns_and_options)
-    results = multi_get(column_family, [key], *columns_and_options)[key]
-    if results.count > 1000
-      log_warning({
-        :context => {
-          :backtrace => caller[0..9].join("=>"),
-          :record_count => results.length,
-        },
-        :event_context => "large_cassandra_read",
-      })
-    end
-    results
+    multi_get(column_family, [key], *columns_and_options)[key]
   end
 
   ##
